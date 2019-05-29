@@ -27,6 +27,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MS\Email\Parser\Attachment;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use ZBateson\MailMimeParser\MailMimeParser;
 
 class SmtpReceivedSubscriber implements EventSubscriberInterface
 {
@@ -55,7 +56,10 @@ class SmtpReceivedSubscriber implements EventSubscriberInterface
     {
         $event->message->delivered = true;
         $parser = new Parser();
+        $newParser = new MailMimeParser();
         try {
+            $newMessage = $newParser->parse($event->message->data);
+            var_dump($newMessage);
             $message = $parser->parse($event->message->data);
         } catch (InvalidAttachmentException $e) {
             $this->logger->error('Email has invalid attachment '.$e->getMessage().' - '.json_encode($event->message));
