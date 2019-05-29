@@ -59,19 +59,19 @@ class SmtpReceivedSubscriber implements EventSubscriberInterface
         $newParser = new MailMimeParser();
         try {
             $newMessage = $newParser->parse($event->message->data);
-            var_dump($newMessage);
+            $headers = $newMessage->getTextContent();;
             $message = $parser->parse($event->message->data);
         } catch (InvalidAttachmentException $e) {
             $this->logger->error('Email has invalid attachment '.$e->getMessage().' - '.json_encode($event->message));
             return;
         }
         $email = new Email();
-        $email->setHeaders(explode("\n\n", $event->message->data)[0]);
+        $email->setHeaders($newMessage->getRawHeaders());
         $email->setRaw($event->message->data);
-        $email->setHtml($message->getHtmlBody());
-        $email->setText($message->getTextBody());
+        $email->setHtml($newMessage->getHtmlContent());
+        $email->setText($newMessage->getTextContent());
         $attachments = [];
-        if (is_array($message->getAttachments()) && count($message->getAttachments()) > 0) {
+        if ($newMessage->getAttachmentCount() > 0) {
             $attachments = array_map(function ($item) {
                 /**
                  * @var Attachment $item
@@ -82,17 +82,19 @@ class SmtpReceivedSubscriber implements EventSubscriberInterface
                     'mimetype' => $item->getMimeType(),
                     'type' => $this->mapTypes($item->getMimeType()),
                 ];
-            }, $message->getAttachments());
+            }, $newMessage->getAllAttachmentParts());
         }
         $email->setAttachments($attachments);
-        $email->setSubject(iconv_mime_decode($message->getSubject()));
-        $email->setFrom($message->getFrom()->getAddress());
-        $email->setFromName($message->getFrom()->getName());
-        $to = $message->getTo()->map(function ($item) {
-            return $item->getAddress();
-        })->toArray();
-        $email->setTo(join(', ', $to));
-        $email->setCreatedAt($message->getDateAsDateTime());
+        $email->setSubject(iconv_mime_decode($newMessage->getHeader('Subject')->getValue()));
+        $email->setFrom($newMessage->getHeader('From')->getValue());
+        $email->setFromName($newMessage->getHeader('From')->getName());
+        $tos = $newMessage->getHeader('To');
+        $toArr = [];
+        foreach($tos->getAddresses() as $to) {
+            $toArr[] = $to->getValue();
+        }
+        $email->setTo(join(', ', $toArr));
+        $email->setCreatedAt($newMessage->getHeader('Date')->getDateTime());
         try {
             $this->em->persist($email);
             $this->em->flush();
