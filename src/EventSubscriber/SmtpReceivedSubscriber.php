@@ -55,7 +55,6 @@ class SmtpReceivedSubscriber implements EventSubscriberInterface
     public function processSmtpConnection(MessageReceivedEvent $event)
     {
         $event->message->delivered = true;
-        $parser = new Parser();
         $newParser = new MailMimeParser();
         try {
             $newMessage = $newParser->parse($event->message->data);
@@ -84,7 +83,7 @@ class SmtpReceivedSubscriber implements EventSubscriberInterface
                     'filename' => preg_replace('/\s/', '', urldecode(mb_decode_mimeheader($item->getFilename()))),
                     'contents' => base64_encode($item->getContent()),
                     'mimetype' => $item->getMimeType(),
-                    'type' => $this->mapTypes($item->getMimeType()),
+                    'type' => $this->mapTypes($item->getContentType()),
                 ];
             }, $newMessage->getAllAttachmentParts());
         }
