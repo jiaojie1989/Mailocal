@@ -59,14 +59,18 @@ class SmtpReceivedSubscriber implements EventSubscriberInterface
         $newParser = new MailMimeParser();
         try {
             $newMessage = $newParser->parse($event->message->data);
-            $headers = $newMessage->getTextContent();;
             $message = $parser->parse($event->message->data);
         } catch (InvalidAttachmentException $e) {
             $this->logger->error('Email has invalid attachment '.$e->getMessage().' - '.json_encode($event->message));
             return;
         }
         $email = new Email();
-        $email->setHeaders($newMessage->getRawHeaders());
+        $headers = $newMessage->getAllHeaders();
+        $headersStr = '';
+        foreach($headers as $header) {
+            $headersStr .= $header->getName() . ": " . $header->getValue() . "\n";
+        }
+        $email->setHeaders($headersStr);
         $email->setRaw($event->message->data);
         $email->setHtml($newMessage->getHtmlContent());
         $email->setText($newMessage->getTextContent());
