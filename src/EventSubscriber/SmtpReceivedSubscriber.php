@@ -89,7 +89,7 @@ class SmtpReceivedSubscriber implements EventSubscriberInterface
             }, $newMessage->getAllAttachmentParts());
         }
         $email->setAttachments($attachments);
-        $email->setSubject(iconv_mime_decode($newMessage->getHeader('Subject')->getValue()));
+        $email->setSubject($newMessage->getHeader('Subject')->getValue());
         $email->setFrom($newMessage->getHeader('From')->getValue());
         $email->setFromName($newMessage->getHeader('From')->getName());
         $tos = $newMessage->getHeader('To');
