@@ -78,7 +78,7 @@ class SmtpReceivedSubscriber implements EventSubscriberInterface {
                  * @var Attachment $item
                  */
                 return [
-                    'filename' => preg_replace('/\s/', '', urldecode(mb_decode_mimeheader($item->getFilename()))),
+                    'filename' => preg_replace('/\s/', '', urldecode(($item->getFilename()))),
                     'contents' => base64_encode($item->getContent()),
                     'mimetype' => $item->getContentType(),
                     'type'     => $this->mapTypes($item->getContentType()),
