@@ -34,57 +34,60 @@ use App\Email\Parser;
 use App\Smtp\CustomServer;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use ZBateson\MailMimeParser\MailMimeParser;
 
-class SmtpServerCommand extends Command
-{
+class SmtpServerCommand extends Command {
+
     protected static $defaultName = 'email:server';
     protected $server;
 
-    public function __construct(?string $name = null, CustomServer $server)
-    {
+    public function __construct(?string $name = null, CustomServer $server) {
         parent::__construct($name);
         $this->server = $server;
     }
 
-    protected function configure()
-    {
+    protected function configure() {
         $this
-            ->setDescription('SMTP server.')
-
-        ->addOption(
-            'port',
-            'p',
-            InputOption::VALUE_OPTIONAL,
-            'Which port should the SMTP server run on?',
-            getenv('SMTP_SERVER_PORT')
-        )
-
-        ->addOption(
-            'allowed_hosts',
-            'ah',
-            InputOption::VALUE_OPTIONAL,
-            'Which ip addresses should be allowed to connect to this server?',
-            getenv('SMTP_SERVER_ALLOWED_HOSTS')
+                ->setDescription('SMTP server.')
+                ->addOption(
+                        'port',
+                        'p',
+                        InputOption::VALUE_OPTIONAL,
+                        'Which port should the SMTP server run on?',
+                        getenv('SMTP_SERVER_PORT')
+                )
+                ->addOption(
+                        'allowed_hosts',
+                        'ah',
+                        InputOption::VALUE_OPTIONAL,
+                        'Which ip addresses should be allowed to connect to this server?',
+                        getenv('SMTP_SERVER_ALLOWED_HOSTS')
         );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
-    {
+    protected function execute(InputInterface $input, OutputInterface $output) {
         $this->server->setPort($input->getOption('port'));
         $this->server->setAllowedHosts($input->getOption('allowed_hosts'));
         $this->server->create();
 
         $io = new SymfonyStyle($input, $output);
-        $io->success('SMTP server now listening for messages from '.$this->server->getAllowedHosts().' on port '.$this->server->getPort());
+        $io->success('SMTP server now listening for messages from ' . $this->server->getAllowedHosts() . ' on port ' . $this->server->getPort());
 
         $this->server->getServer()->on(SessionInterface::EVENT_SMTP_RECEIVED, function (Message $message) use ($output) {
-            $parser = new Parser();
+//            $parser = new Parser();
+            $newParser = new MailMimeParser();
             try {
-                $msg = $parser->parse($message->data);
-                $to = $msg->getTo()->map(function ($item) {
-                    return $item->getAddress();
-                })->toArray();
-                $output->writeln('<info>Received message for <options=underscore>'.join(', ', $to). '</>: <options=bold>'.mb_decode_mimeheader($msg->getSubject()).'</></info>');
+//                $msg = $parser->parse($message->data);
+                $newMessage = $newParser->parse($event->message->data);
+                $tos        = $newMessage->getHeader('To');
+                $toArr      = [];
+                foreach ($tos->getAddresses() as $to) {
+                    $toArr[] = $to->getValue();
+                }
+//                $to = $msg->getTo()->map(function ($item) {
+//                            return $item->getAddress();
+//                        })->toArray();
+                $output->writeln('<info>Received message for <options=underscore>' . join(', ', $toArr) . '</>: <options=bold>' . mb_decode_mimeheader($newMessage->getHeader('Subject')->getValue()) . '</></info>');
             } catch (InvalidAttachmentException $e) {
                 $output->writeln([
                     '<error>Received message with invalid attachment</error>',
@@ -94,4 +97,5 @@ class SmtpServerCommand extends Command
         });
         $this->server->start();
     }
+
 }
