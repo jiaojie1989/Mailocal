@@ -78,7 +78,7 @@ class SmtpServerCommand extends Command {
             $newParser = new MailMimeParser();
             try {
 //                $msg = $parser->parse($message->data);
-                $newMessage = $newParser->parse($event->message->data);
+                $newMessage = $newParser->parse($message->data);
                 $tos        = $newMessage->getHeader('To');
                 $toArr      = [];
                 foreach ($tos->getAddresses() as $to) {
