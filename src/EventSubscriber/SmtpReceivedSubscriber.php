@@ -29,21 +29,19 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use ZBateson\MailMimeParser\MailMimeParser;
 
-class SmtpReceivedSubscriber implements EventSubscriberInterface
-{
+class SmtpReceivedSubscriber implements EventSubscriberInterface {
+
     protected $logger;
     protected $em;
 
-    public function __construct(LoggerInterface $logger, EntityManagerInterface $em)
-    {
+    public function __construct(LoggerInterface $logger, EntityManagerInterface $em) {
         $this->logger = $logger;
-        $this->em = $em;
+        $this->em     = $em;
     }
 
-    public static function getSubscribedEvents()
-    {
+    public static function getSubscribedEvents() {
         return [
-            CustomSession::EVENT_SMTP_RECEIVED => [
+            CustomSession::EVENT_SMTP_RECEIVED    => [
                 ['processSmtpConnection', 10],
             ],
             CustomSession::EVENT_SMTP_AUTH_FAILED => [
@@ -52,21 +50,21 @@ class SmtpReceivedSubscriber implements EventSubscriberInterface
         ];
     }
 
-    public function processSmtpConnection(MessageReceivedEvent $event)
-    {
+    public function processSmtpConnection(MessageReceivedEvent $event) {
         $event->message->delivered = true;
-        $newParser = new MailMimeParser();
+        $newParser                 = new MailMimeParser();
         try {
             $newMessage = $newParser->parse($event->message->data);
             //$message = $parser->parse($event->message->data);
         } catch (InvalidAttachmentException $e) {
-            $this->logger->error('Email has invalid attachment '.$e->getMessage().' - '.json_encode($event->message));
+            $this->logger->error('Email has invalid attachment ' . $e->getMessage() . ' - ' . json_encode($event->message));
+            \Sentry\captureException($e);
             return;
         }
-        $email = new Email();
-        $headers = $newMessage->getAllHeaders();
+        $email      = new Email();
+        $headers    = $newMessage->getAllHeaders();
         $headersStr = '';
-        foreach($headers as $header) {
+        foreach ($headers as $header) {
             $headersStr .= $header->getName() . ": " . $header->getValue() . "\n";
         }
         $email->setHeaders($headersStr);
@@ -83,7 +81,7 @@ class SmtpReceivedSubscriber implements EventSubscriberInterface
                     'filename' => preg_replace('/\s/', '', urldecode(mb_decode_mimeheader($item->getFilename()))),
                     'contents' => base64_encode($item->getContent()),
                     'mimetype' => $item->getContentType(),
-                    'type' => $this->mapTypes($item->getContentType()),
+                    'type'     => $this->mapTypes($item->getContentType()),
                 ];
             }, $newMessage->getAllAttachmentParts());
         }
@@ -91,9 +89,9 @@ class SmtpReceivedSubscriber implements EventSubscriberInterface
         $email->setSubject($newMessage->getHeader('Subject')->getValue());
         $email->setFrom($newMessage->getHeader('From')->getValue());
         $email->setFromName($newMessage->getHeader('From')->getName());
-        $tos = $newMessage->getHeader('To');
+        $tos   = $newMessage->getHeader('To');
         $toArr = [];
-        foreach($tos->getAddresses() as $to) {
+        foreach ($tos->getAddresses() as $to) {
             $toArr[] = $to->getValue();
         }
         $email->setTo(join(', ', $toArr));
@@ -104,57 +102,57 @@ class SmtpReceivedSubscriber implements EventSubscriberInterface
             $this->logger->info('Email saved');
         } catch (\Exception $e) {
             $this->logger->error('Email NOT saved');
+            \Sentry\captureException($e);
         }
     }
 
-    public function processAuthFailed(AuthFailedEvent $event)
-    {
-        $this->logger->error('Auth failed for user '.$event->username. ' with password '.$event->password);
+    public function processAuthFailed(AuthFailedEvent $event) {
+        $this->logger->error('Auth failed for user ' . $event->username . ' with password ' . $event->password);
     }
 
-    protected function mapTypes($mimeType)
-    {
+    protected function mapTypes($mimeType) {
         $map = [
-            'application/vnd.ms-excel' => 'excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.template' => 'excel',
-            'application/vnd.ms-excel.sheet.macroEnabled.12' => 'excel',
-            'application/vnd.ms-excel.template.macroEnabled.12' => 'excel',
-            'application/vnd.ms-excel.addin.macroEnabled.12' => 'excel',
-            'application/vnd.ms-excel.sheet.binary.macroEnabled.1' => 'excel',
-            'application/msword' => 'word',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'word',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.template' => 'word',
-            'application/vnd.ms-word.document.macroEnabled.12' => 'word',
-            'application/vnd.ms-word.template.macroEnabled.12' => 'word',
-            'application/vnd.ms-powerpoint' => 'word',
+            'application/vnd.ms-excel'                                                  => 'excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'         => 'excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.template'      => 'excel',
+            'application/vnd.ms-excel.sheet.macroEnabled.12'                            => 'excel',
+            'application/vnd.ms-excel.template.macroEnabled.12'                         => 'excel',
+            'application/vnd.ms-excel.addin.macroEnabled.12'                            => 'excel',
+            'application/vnd.ms-excel.sheet.binary.macroEnabled.1'                      => 'excel',
+            'application/msword'                                                        => 'word',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'   => 'word',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.template'   => 'word',
+            'application/vnd.ms-word.document.macroEnabled.12'                          => 'word',
+            'application/vnd.ms-word.template.macroEnabled.12'                          => 'word',
+            'application/vnd.ms-powerpoint'                                             => 'word',
             'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'word',
-            'application/vnd.openxmlformats-officedocument.presentationml.template' => 'word',
-            'application/vnd.openxmlformats-officedocument.presentationml.slideshow' => 'word',
-            'application/vnd.ms-powerpoint.addin.macroEnabled.12' => 'word',
-            'application/vnd.ms-powerpoint.presentation.macroEnabled.12' => 'word',
-            'application/vnd.ms-powerpoint.slideshow.macroEnabled.12' => 'word',
-            'application/pdf' => 'pdf',
-            'application/x-bzip2' => 'archive',
-            'application/zip' => 'archive',
-            'application/vnd.ms-cab-compressed' => 'archive',
-            'application/x-7z-compressed' => 'archive',
-            'image/bmp' => 'image',
-            'image/cis-cod' => 'image',
-            'image/gif' => 'image',
-            'image/ief' => 'image',
-            'image/jpeg' => 'image',
-            'image/pipeg' => 'image',
-            'image/svg+xml' => 'image',
-            'image/tiff' => 'image',
-            'audio/mpeg' => 'audio',
-            'audio/basic' => 'audio',
-            'audio/mid' => 'audio',
-            'audio/x-wav' => 'audio',
+            'application/vnd.openxmlformats-officedocument.presentationml.template'     => 'word',
+            'application/vnd.openxmlformats-officedocument.presentationml.slideshow'    => 'word',
+            'application/vnd.ms-powerpoint.addin.macroEnabled.12'                       => 'word',
+            'application/vnd.ms-powerpoint.presentation.macroEnabled.12'                => 'word',
+            'application/vnd.ms-powerpoint.slideshow.macroEnabled.12'                   => 'word',
+            'application/pdf'                                                           => 'pdf',
+            'application/x-bzip2'                                                       => 'archive',
+            'application/zip'                                                           => 'archive',
+            'application/vnd.ms-cab-compressed'                                         => 'archive',
+            'application/x-7z-compressed'                                               => 'archive',
+            'image/bmp'                                                                 => 'image',
+            'image/cis-cod'                                                             => 'image',
+            'image/gif'                                                                 => 'image',
+            'image/ief'                                                                 => 'image',
+            'image/jpeg'                                                                => 'image',
+            'image/pipeg'                                                               => 'image',
+            'image/svg+xml'                                                             => 'image',
+            'image/tiff'                                                                => 'image',
+            'audio/mpeg'                                                                => 'audio',
+            'audio/basic'                                                               => 'audio',
+            'audio/mid'                                                                 => 'audio',
+            'audio/x-wav'                                                               => 'audio',
         ];
         if (isset($map[$mimeType])) {
             return $map[$mimeType];
         }
         return '';
     }
+
 }
