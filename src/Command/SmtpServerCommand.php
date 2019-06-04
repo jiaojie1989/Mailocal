@@ -87,7 +87,7 @@ class SmtpServerCommand extends Command {
 //                $to = $msg->getTo()->map(function ($item) {
 //                            return $item->getAddress();
 //                        })->toArray();
-                $output->writeln('<info>Received message for <options=underscore>' . join(', ', $toArr) . '</>: <options=bold>' . mb_decode_mimeheader($newMessage->getHeader('Subject')->getValue()) . '</></info>');
+                $output->writeln('<info>Received message for <options=underscore>' . join(', ', $toArr) . '</>: <options=bold>' . ($newMessage->getHeader('Subject')->getValue()) . '</></info>');
             } catch (InvalidAttachmentException $e) {
                 $output->writeln([
                     '<error>Received message with invalid attachment</error>',
