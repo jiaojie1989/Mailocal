@@ -97,9 +97,11 @@ class SmtpReceivedSubscriber implements EventSubscriberInterface {
         $email->setTo(join(', ', $toArr));
         $email->setCreatedAt($newMessage->getHeader('Date')->getDateTime());
         try {
+            $this->em->getConnection()->connect();
             $this->em->persist($email);
             $this->em->flush();
             $this->logger->info('Email saved');
+            $this->em->getConnection()->close();
         } catch (\Exception $e) {
             $this->logger->error('Email NOT saved');
             \Sentry\captureException($e);
