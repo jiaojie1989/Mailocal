@@ -89,10 +89,13 @@ class SmtpServerCommand extends Command {
 //                        })->toArray();
                 $output->writeln('<info>Received message for <options=underscore>' . join(', ', $toArr) . '</>: <options=bold>' . ($newMessage->getHeader('Subject')->getValue()) . '</></info>');
             } catch (InvalidAttachmentException $e) {
+                \Sentry\State\Hub::getCurrent()->captureException($e);
                 $output->writeln([
                     '<error>Received message with invalid attachment</error>',
                     '<error>' . $e->getMessage() . '</error>'
                 ]);
+            } catch (\Exception $e) {
+                \Sentry\State\Hub::getCurrent()->captureException($e);
             }
         });
         $this->server->start();

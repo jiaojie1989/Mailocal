@@ -58,7 +58,7 @@ class SmtpReceivedSubscriber implements EventSubscriberInterface {
             //$message = $parser->parse($event->message->data);
         } catch (InvalidAttachmentException $e) {
             $this->logger->error('Email has invalid attachment ' . $e->getMessage() . ' - ' . json_encode($event->message));
-            \Sentry\captureException($e);
+            \Sentry\State\Hub::getCurrent()->captureException($e);
             return;
         }
         $email      = new Email();
@@ -104,7 +104,7 @@ class SmtpReceivedSubscriber implements EventSubscriberInterface {
             $this->em->getConnection()->close();
         } catch (\Exception $e) {
             $this->logger->error('Email NOT saved');
-            \Sentry\captureException($e);
+            \Sentry\State\Hub::getCurrent()->captureException($e);
         }
     }
 
