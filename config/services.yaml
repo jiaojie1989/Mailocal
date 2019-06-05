@@ -23,3 +23,8 @@ services:
     App\Controller\:
         resource: '../src/Controller'
         tags: ['controller.service_arguments']
+        
+    App\Guard\Authenticator:
+        arguments:
+            $clienntId: '%env(ZWS_APPID)%'
+            $clientSecret: '%%env(ZWS_SECRET)%'
