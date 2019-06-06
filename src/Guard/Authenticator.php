@@ -27,6 +27,12 @@ class Authenticator extends AbstractGuardAuthenticator {
     private $clientId;
     private $clientSecret;
 
+    /**
+     *
+     * @var \Symfony\Component\HttpFoundation\Request
+     */
+    private $request;
+
     public function __construct($clientId, $clientSecret) {
         $this->clientId     = $clientId;
         $this->clientSecret = $clientSecret;
@@ -67,7 +73,7 @@ class Authenticator extends AbstractGuardAuthenticator {
     }
 
     private function getUserInfo(array $credentials) {
-        $session = new Session();
+        $session = $this->request->getSession();
         if (empty($credentials)) {
             $user = $session->get('user');
             if (empty($user)) {
@@ -111,12 +117,8 @@ class Authenticator extends AbstractGuardAuthenticator {
     }
 
     public function supports(Request $request): bool {
-        $session = new Session();
-        $user    = $session->get('user');
-        if (empty($user)) {
-            return true;
-        }
-        return false;
+        $this->request = $request;
+        return true;
     }
 
 }
