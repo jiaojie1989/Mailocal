@@ -48,12 +48,13 @@ class Authenticator extends AbstractGuardAuthenticator {
     }
 
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception) {
-        return new Response($exception->getMessage(), Response::HTTP_UNAUTHORIZED);
+        $redirectUrl = sprintf("https://service.100tal.com/sso/login/%s", $this->clientId);
+        return new RedirectResponse($redirectUrl);
+//        return new Response($exception->getMessage(), Response::HTTP_UNAUTHORIZED);
     }
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, $providerKey) {
-        $redirectUrl = sprintf("https://service.100tal.com/sso/login/%s", $this->clientId);
-        return new RedirectResponse($redirectUrl);
+        // do nothing 
     }
 
     public function supportsRememberMe() {
