@@ -13,7 +13,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
  *
  * @author JIAO Jie <thomasjiao@vip.qq.com>
  */
-class User extends UserInterface {
+class User implements UserInterface {
 
     protected $user;
 
