@@ -111,7 +111,12 @@ class Authenticator extends AbstractGuardAuthenticator {
     }
 
     public function supports(Request $request): bool {
-        return true;
+        $session = new Session();
+        $user    = $session->get('user');
+        if (empty($user)) {
+            return true;
+        }
+        return false;
     }
 
 }
