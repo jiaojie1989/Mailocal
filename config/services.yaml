@@ -26,5 +26,5 @@ services:
         
     App\Guard\Authenticator:
         arguments:
-            $clienntId: '%env(ZWS_APPID)%'
-            $clientSecret: '%%env(ZWS_SECRET)%'
+            $clientId: '%env(ZWS_APPID)%'
+            $clientSecret: '%env(ZWS_SECRET)%'

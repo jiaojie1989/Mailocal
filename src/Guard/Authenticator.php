@@ -15,6 +15,8 @@ use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 use Symfony\Component\Security\Guard\AbstractGuardAuthenticator;
 use Symfony\Component\Security\Http\Session\SessionAuthenticationStrategy;
+use Symfony\Component\HttpFoundation\Session\Session;
+
 /**
  * Description of Authenticator
  *
@@ -34,13 +36,11 @@ class Authenticator extends AbstractGuardAuthenticator {
         if ($request->query->has('token')) {
             return ['token' => $request->query->get('token')];
         }
+        return [];
     }
 
     public function getUser($credentials, UserProviderInterface $userProvider = null) {
-//        $openId = $this->getOpenIdFromCredentials($credentials);
         return $this->getUserInfo($credentials);
-
-//        return $userProvider->loadUserByUsername($openId);
     }
 
     public function checkCredentials($credentials, UserInterface $user) {
@@ -52,7 +52,8 @@ class Authenticator extends AbstractGuardAuthenticator {
     }
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, $providerKey) {
-        
+        $redirectUrl = sprintf("https://service.100tal.com/sso/login/%s", $this->clientId);
+        return new RedirectResponse($redirectUrl);
     }
 
     public function supportsRememberMe() {
@@ -65,15 +66,26 @@ class Authenticator extends AbstractGuardAuthenticator {
     }
 
     private function getUserInfo(array $credentials) {
-        $tkResp   = file_get_contents(sprintf("https://api.service.100tal.com/basic/get_ticket?appid=%s&appkey=%s", $this->clientId, $this->clientSecret));
-        $tkInfo   = json_decode($tokenResp, true);
-        $tk       = $tkInfo['ticket'];
-        $userInfo = file_get_contents(sprintf("http://api.service.100tal.com/sso/verify?token=%s&ticket=%s", $credentials['token'], $tk));
-        $user     = json_decode($userInfo, true);
-        if ($user['errcode']) {
-            throw new AuthenticationException('Auth server is down');
+        $session = new Session();
+        if (empty($credentials)) {
+            $user = $session->get('user');
+            if (empty($user)) {
+                throw new AuthenticationException('session not exist');
+            }
+        } else {
+            $tkResp   = file_get_contents(sprintf("https://api.service.100tal.com/basic/get_ticket?appid=%s&appkey=%s", $this->clientId, $this->clientSecret));
+            $tkInfo   = json_decode($tokenResp, true);
+            $tk       = $tkInfo['ticket'];
+            $userInfo = file_get_contents(sprintf("http://api.service.100tal.com/sso/verify?token=%s&ticket=%s", $credentials['token'], $tk));
+            $user     = json_decode($userInfo, true);
+            if ($user['errcode']) {
+                throw new AuthenticationException('Auth server is down');
+            }
+
+            $session->set('user', $user);
         }
-        return $user;
+
+        return new User($user);
     }
 
     private function getOpenIdFromCredentials(array $credentials) {
@@ -98,7 +110,7 @@ class Authenticator extends AbstractGuardAuthenticator {
     }
 
     public function supports(Request $request): bool {
-        
+        return true;
     }
 
 }
