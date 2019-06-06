@@ -75,7 +75,7 @@ class Authenticator extends AbstractGuardAuthenticator {
             }
         } else {
             $tkResp   = file_get_contents(sprintf("https://api.service.100tal.com/basic/get_ticket?appid=%s&appkey=%s", $this->clientId, $this->clientSecret));
-            $tkInfo   = json_decode($tokenResp, true);
+            $tkInfo   = json_decode($tkResp, true);
             $tk       = $tkInfo['ticket'];
             $userInfo = file_get_contents(sprintf("http://api.service.100tal.com/sso/verify?token=%s&ticket=%s", $credentials['token'], $tk));
             $user     = json_decode($userInfo, true);
