@@ -22,15 +22,15 @@ class User implements UserInterface {
     }
 
     public function getRoles() {
-        
+        return [];
     }
 
     public function getPassword() {
-        
+        return '';
     }
 
     public function getSalt() {
-        
+        return null;
     }
 
     public function getUsername() {
