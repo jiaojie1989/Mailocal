@@ -10,6 +10,12 @@ framework:
         handler_id: ~
         cookie_secure: auto
         cookie_samesite: lax
+        handler_id: session.handler.native_file
+        save_path: '%kernel.project_dir%/var/sessions/%kernel.environment%'
+        cookie_domain: fmail.chengjiukehu.com
+        cookie_lifetime: 86400
+        use_cookies: true
+        cookie_httponly: true
 
     #esi: true
     #fragments: true
