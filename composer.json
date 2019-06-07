@@ -11,6 +11,7 @@
         "html2text/html2text": "^4.2",
         "jfoucher/email-parser": "0.4.*",
         "kevinpapst/adminlte-bundle": "^2.0",
+        "predis/predis": "^1.1",
         "react/socket": "^1.2",
         "sensio/framework-extra-bundle": "^5.1",
         "sentry/sentry-symfony": "^3.0",

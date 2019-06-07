@@ -28,3 +28,17 @@ services:
         arguments:
             $clientId: '%env(ZWS_APPID)%'
             $clientSecret: '%env(ZWS_SECRET)%'
+            
+    Redis:
+        class: Predis\Client
+        arguments:
+            $parameters: '%env(resolve:REDIS_HOST)%'
+            $options:
+                parameters:
+                    password: '%env(resolve:REDIS_PWD)%'
+                    database: '%env(resolve:REDIS_DB)%'
+                    
+    Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler:
+        arguments:
+            - '@Redis'
+            - { prefix: '%env(resolve:REDIS_PREFIX)%' }
