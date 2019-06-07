@@ -35,7 +35,7 @@ services:
             $parameters: '%env(resolve:REDIS_HOST)%'
             $options:
                 parameters:
-                    password: '%env(resolve:REDIS_PWD)%'
+#                    password: %env(resolve:REDIS_PWD)%
                     database: '%env(resolve:REDIS_DB)%'
                     
     Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler:
